@@ -33,17 +33,20 @@ def input_list(prompt_name, property_name):
         return input_string.split(',')
 
 
-def learn_commands(operation_mode, fan_mode, swing_mode, temp_range):
+def learn_commands(operation_mode, preset_mode, fan_mode, swing_mode, temp_range):
     if operation_mode not in commands:
         commands[operation_mode] = {}
-    if fan_mode not in commands[operation_mode]:
-        commands[operation_mode][fan_mode] = {}
-    if swing_mode not in commands[operation_mode][fan_mode]:
-        commands[operation_mode][fan_mode][swing_mode] = {}
+    if preset_mode not in commands[operation_mode]:
+        commands[operation_mode][preset_mode] = {}
+    if fan_mode not in commands[operation_mode][preset_mode]:
+        commands[operation_mode][preset_mode][fan_mode] = {}
+    if swing_mode not in commands[operation_mode][preset_mode][fan_mode]:
+        commands[operation_mode][preset_mode][fan_mode][swing_mode] = {}
     else:
         if auto_resume_mode or \
-           input(f'It seems you already have the definition for "{operation_mode}", "{fan_mode}" fan and '
-                 f'"{swing_mode}" swing mode. Do you want to skip to the next step? (y/[n]) ') == 'y':
+           input(f'It seems you already have the definition for "{operation_mode}", "{preset_mode}", '
+                 f'"{fan_mode}" fan and "{swing_mode}" swing mode. Do you want to skip to the next '
+                 f'step? (y/[n]) ') == 'y':
             return
 
     response = input(f'Prepare remote for learning, starting at {temp_range[0]}º. '
@@ -54,22 +57,25 @@ def learn_commands(operation_mode, fan_mode, swing_mode, temp_range):
         print(f'Waiting for command')
         base64command = learn_command()
         for temp in temp_range:
-            commands[operation_mode][fan_mode][swing_mode][f'{temp:g}'] = base64command
+            commands[operation_mode][preset_mode][fan_mode][swing_mode][f'{temp:g}'] = base64command
     else:
         for temp in temp_range:
             print(f'Waiting for command for temperature {temp}')
             base64command = learn_command()
-            commands[operation_mode][fan_mode][swing_mode][f'{temp:g}'] = base64command
+            commands[operation_mode][preset_mode][fan_mode][swing_mode][f'{temp:g}'] = base64command
 
 
 def main():
     if auto_resume_mode:
         operation_modes = list(data['operationModes'])
+        preset_modes = list(data['presetModes'])
         fan_modes = list(data['fanModes'])
         swing_modes = list(data['swingModes'])
     else:
         operation_modes = input_list('operation modes', 'operationModes')
         print(f'Will learn this operation modes: {operation_modes}')
+        preset_modes = input_list('preset modes', 'presetModes')
+        print(f'Will learn this preset modes: {preset_modes}')
         fan_modes = input_list('fan modes', 'fanModes')
         print(f'Will learn this fan modes: {fan_modes}')
         swing_modes = input_list('swing modes', 'swingModes')
@@ -81,12 +87,13 @@ def main():
     temp_range = [x/10 for x in range(min_temperature*10, (max_temperature*10)+int(precision*10), int(precision*10))]
 
     for operation_mode in operation_modes:
-        for fan_mode in fan_modes:
-            for swing_mode in swing_modes:
-                print(
-                    f'Learning for mode {operation_mode}, fan {fan_mode}, swing {swing_mode}')
-                learn_commands(operation_mode, fan_mode, swing_mode, temp_range)
-                temp_range = list(reversed(temp_range))
+        for preset_mode in preset_modes:
+            for fan_mode in fan_modes:
+                for swing_mode in swing_modes:
+                    print(
+                        f'Learning for mode {operation_mode}, preset {preset_mode}, fan {fan_mode}, swing {swing_mode}')
+                    learn_commands(operation_mode, preset_mode, fan_mode, swing_mode, temp_range)
+                    temp_range = list(reversed(temp_range))
 
 
 if len(sys.argv) < 2:
